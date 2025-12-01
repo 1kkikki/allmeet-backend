@@ -39,7 +39,10 @@ def create_app():
         "http://localhost:5173",
         "http://127.0.0.1:5175",
         "http://localhost:5175",
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
         "https://1kkikki.github.io",
+        "https://www.1kkikki.github.io",
         "https://allmeet.github.io",
         os.getenv("FRONTEND_URL", ""),  # 환경 변수로 프론트엔드 URL 설정 가능
     }
