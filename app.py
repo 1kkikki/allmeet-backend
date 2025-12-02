@@ -48,8 +48,27 @@ def create_app():
         "origins": allowed_origins,
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
-        "supports_credentials": True
+        "supports_credentials": True,
+        "automatic_options": True,
+        "max_age": 3600
     }})
+    
+    # 프리플라이트 요청(OPTIONS)을 명시적으로 처리하여 리다이렉트 방지
+    # Render.com의 리버스 프록시에서 리다이렉트가 발생하는 것을 방지
+    @app.before_request
+    def handle_preflight():
+        from flask import request as req, make_response
+        if req.method == "OPTIONS":
+            origin = req.headers.get("Origin")
+            # 허용된 origin인지 확인
+            if origin and origin in allowed_origins:
+                response = make_response()
+                response.headers.add("Access-Control-Allow-Origin", origin)
+                response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+                response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+                response.headers.add("Access-Control-Allow-Credentials", "true")
+                response.headers.add("Access-Control-Max-Age", "3600")
+                return response
 
     # 🔥 블루프린트 등록 (prefix는 각 파일에서 설정)
     app.register_blueprint(auth_bp)
