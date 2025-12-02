@@ -30,16 +30,19 @@ class AvailableTime(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey("team_recruitments.id"), nullable=True)  # null이면 대시보드용, 값이 있으면 해당 팀용
     day_of_week = db.Column(db.String(10), nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
 
     user = db.relationship("User", backref=db.backref("available_times", lazy=True))
+    team = db.relationship("TeamRecruitment", backref=db.backref("team_available_times", lazy=True))
 
     def to_dict(self):
         return {
             "id": self.id,
             "user_id": self.user_id,
+            "team_id": self.team_id,
             "day_of_week": self.day_of_week,
             "start_time": self.start_time.strftime("%H:%M"),
             "end_time": self.end_time.strftime("%H:%M"),
