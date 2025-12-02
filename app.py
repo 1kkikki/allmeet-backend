@@ -23,79 +23,27 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
 
-    # JWT 헤더 인식 설정 추가
-    app.config["JWT_TOKEN_LOCATION"] = ["headers"]
+    # JWT 설정 (헤더 및 쿠키)
+    app.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
     app.config["JWT_HEADER_NAME"] = "Authorization"
     app.config["JWT_HEADER_TYPE"] = "Bearer"
+    app.config["JWT_COOKIE_SECURE"] = True
+    app.config["JWT_COOKIE_SAMESITE"] = "None"
 
     # 확장 기능 초기화
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
 
-    # CORS 설정 - 환경 변수와 기본값 결합
-    # 환경 변수에서 허용된 origin을 가져오거나 기본값 사용
-    env_origins = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
-    env_origins = [origin.strip() for origin in env_origins if origin.strip()]
-    
-    # 기본 허용된 origin 목록
-    default_origins = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-        "http://localhost:5175",
-        "http://127.0.0.1:5175",
+    # CORS allowed_origins 확정
+    allowed_origins = [
         "https://allmeet.site",
         "https://www.allmeet.site",
-        "https://1kkikki.github.io",
+        "http://localhost:5173"  # 개발용
     ]
     
-    # Vercel 도메인 패턴 추가 (환경 변수로도 설정 가능)
-    vercel_domain = os.getenv("VERCEL_URL")  # Vercel이 자동으로 설정하는 환경 변수
-    if vercel_domain:
-        default_origins.append(f"https://{vercel_domain}")
-    
-    # 모든 origin 결합 (중복 제거)
-    allowed_origins = list(set(default_origins + env_origins))
-    
-    # 프로덕션 환경에서는 더 엄격하게, 개발 환경에서는 더 유연하게
-    is_production = os.getenv("FLASK_ENV") == "production" or os.getenv("ENVIRONMENT") == "production"
-    
-    # CORS 설정 - 모든 경로에 대해 적용
-    CORS(app, 
-         resources={r"/*": {
-             "origins": allowed_origins,
-             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
-             "expose_headers": ["Content-Type", "Authorization"],
-             "supports_credentials": True,
-             "max_age": 3600
-         }},
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-         expose_headers=["Content-Type", "Authorization"]
-    )
-
-    # CORS 헤더를 명시적으로 모든 응답에 추가 (안전장치)
-    @app.after_request
-    def after_request(response):
-        origin = request.headers.get('Origin')
-        if origin:
-            # 허용된 origin 목록에 있거나, 개발 환경에서 localhost인 경우 허용
-            if origin in allowed_origins:
-                response.headers['Access-Control-Allow-Origin'] = origin
-                response.headers['Access-Control-Allow-Credentials'] = 'true'
-                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-                response.headers['Access-Control-Expose-Headers'] = 'Content-Type, Authorization'
-            # 개발 환경에서 localhost 패턴 허용 (유연성)
-            elif not is_production and ('localhost' in origin or '127.0.0.1' in origin):
-                response.headers['Access-Control-Allow-Origin'] = origin
-                response.headers['Access-Control-Allow-Credentials'] = 'true'
-                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-                response.headers['Access-Control-Expose-Headers'] = 'Content-Type, Authorization'
-        return response
+    # CORS 설정
+    CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
 
     # 🔥 블루프린트 등록 (prefix는 각 파일에서 설정)
     app.register_blueprint(auth_bp)
