@@ -72,6 +72,7 @@ def create_app():
             CourseBoardCommentLike,
             TeamRecruitment,
             TeamRecruitmentMember,
+            TeamAvailabilitySubmission,
             Schedule,
             Notification,
             Poll,

@@ -12,7 +12,7 @@ from models import (
     Notification,
     Course,
 )
-from team_availability_submission import TeamAvailabilitySubmission
+from models import TeamAvailabilitySubmission
 from datetime import datetime
 from collections import defaultdict
 
